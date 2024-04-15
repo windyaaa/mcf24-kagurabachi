@@ -160,7 +160,7 @@ def eda():
 
     st.markdown(
         "<br>"
-        "<h5>Blood Pressure Visualization</h5>",  
+        "<h5>Blood Pressure by Age</h5>",  
         unsafe_allow_html=True
     )
 
@@ -171,12 +171,14 @@ def eda():
     high_cholesterol_df = df[df['Cholesterol Total (mg/dL)'] >= 200]
     low_cholesterol_df = df[df['Cholesterol Total (mg/dL)'] < 200]
 
+    custom_palette = {"M": "blue", "F": "red"}
+
     # Column 1 for respondents with high cholesterol
     col1, col2 = st.columns(2)
     with col1:
         st.write('High Cholesterol')
         plt.figure(figsize=(10, 6))
-        sns.lineplot(data=high_cholesterol_df, x="Usia", y="Mean Arterial Pressure", hue="Jenis Kelamin")
+        sns.lineplot(data=high_cholesterol_df, x="Usia", y="Mean Arterial Pressure", hue="Jenis Kelamin", palette=custom_palette)
         # plt.title("Mean Arterial Pressure (High Cholesterol)")
         plt.xlabel("Age")
         plt.ylabel("Mean Arterial Pressure")
@@ -187,7 +189,7 @@ def eda():
     with col2:
         st.write('Normal Cholesterol')
         plt.figure(figsize=(10, 6))
-        sns.lineplot(data=low_cholesterol_df, x="Usia", y="Mean Arterial Pressure", hue="Jenis Kelamin")
+        sns.lineplot(data=low_cholesterol_df, x="Usia", y="Mean Arterial Pressure", hue="Jenis Kelamin", palette=custom_palette)
         # plt.title("Mean Arterial Pressure (Low Cholesterol)")
         plt.xlabel("Age")
         plt.ylabel("Mean Arterial Pressure")
@@ -209,6 +211,233 @@ def eda():
 
     ###############################################
 
+
+
+    ##### FASTING GLUCOSE #####
+
+    st.text("")
+
+    st.markdown(
+        "<br>"
+        "<h5>Fasting Glucose by Age</h5>",  
+        unsafe_allow_html=True
+    )
+
+
+    # Filter respondents based on 'Cholesterol Total (mg/dL)'
+    high_cholesterol_df = df[df['Cholesterol Total (mg/dL)'] >= 200]
+    low_cholesterol_df = df[df['Cholesterol Total (mg/dL)'] < 200]
+
+    # Define custom color palettes
+    # colors = sns.color_palette("Set2")
+    custom_palette = {"M": "orange", "F": "green"}
+
+    # Column 1 for respondents with high cholesterol
+    col1, col2 = st.columns(2)
+    with col1:
+        st.write('High Cholesterol')
+        plt.figure(figsize=(10, 6))
+        sns.lineplot(data=high_cholesterol_df, x="Usia", y="Glukosa Puasa (mg/dL)", hue="Jenis Kelamin", palette=custom_palette)
+        plt.xlabel("Age")
+        plt.ylabel("Glukosa Puasa")
+        plt.legend(title="Gender")
+        st.pyplot()
+
+    # Column 2 for respondents with low cholesterol
+    with col2:
+        st.write('Normal Cholesterol')
+        plt.figure(figsize=(10, 6))
+        sns.lineplot(data=low_cholesterol_df, x="Usia", y="Glukosa Puasa (mg/dL)", hue="Jenis Kelamin", palette=custom_palette)
+        plt.xlabel("Age")
+        plt.ylabel("Glukosa Puasa")
+        plt.legend(title="Gender")
+        st.pyplot()
+
+
+    col1, col2 = st.columns(2)
+    with col1:
+        with st.expander("🔍 See explanation"):
+            st.write("""
+            ===== TO BE DETERMINED =====
+                """)
+    
+    with col2:
+        with st.expander("❓ Why do we use this?"):
+            st.write("""
+            ===== TO BE DETERMINED =====
+                """)
+    #################################
+
+
+
+        ##### FASTING GLUCOSE #####
+
+    st.text("")
+
+    st.markdown(
+        "<br>"
+        "<h5>Body Mass Index by Age</h5>",  
+        unsafe_allow_html=True
+    )
+
+
+    # Filter respondents based on 'Cholesterol Total (mg/dL)'
+    high_cholesterol_df = df[df['Cholesterol Total (mg/dL)'] >= 200]
+    low_cholesterol_df = df[df['Cholesterol Total (mg/dL)'] < 200]
+
+    # Define custom color palettes
+    # colors = sns.color_palette("Set1")
+    custom_palette = {"M": "blue", "F": "orange"}
+
+    # Column 1 for respondents with high cholesterol
+    col1, col2 = st.columns(2)
+    with col1:
+        st.write('High Cholesterol')
+        plt.figure(figsize=(10, 6))
+        sns.lineplot(data=high_cholesterol_df, x="Usia", y="IMT (kg/m2)", hue="Jenis Kelamin", palette=custom_palette)
+        plt.xlabel("Age")
+        plt.ylabel("Glukosa Puasa")
+        plt.legend(title="Gender")
+        st.pyplot()
+
+    # Column 2 for respondents with low cholesterol
+    with col2:
+        st.write('Normal Cholesterol')
+        plt.figure(figsize=(10, 6))
+        sns.lineplot(data=low_cholesterol_df, x="Usia", y="IMT (kg/m2)", hue="Jenis Kelamin", palette=custom_palette)
+        plt.xlabel("Age")
+        plt.ylabel("Glukosa Puasa")
+        plt.legend(title="Gender")
+        st.pyplot()
+
+
+    col1, col2 = st.columns(2)
+    with col1:
+        with st.expander("🔍 See explanation"):
+            st.write("""
+            ===== TO BE DETERMINED =====
+                """)
+    
+    with col2:
+        with st.expander("❓ Why do we use this?"):
+            st.write("""
+            ===== TO BE DETERMINED =====
+                """)
+    #################################
+
+        ##### FASTING GLUCOSE #####
+
+    st.text("")
+
+    st.markdown(
+        "<br>"
+        "<h5>Triglyceride by Age</h5>",  
+        unsafe_allow_html=True
+    )
+
+
+    # Filter respondents based on 'Cholesterol Total (mg/dL)'
+    high_cholesterol_df = df[df['Cholesterol Total (mg/dL)'] >= 200]
+    low_cholesterol_df = df[df['Cholesterol Total (mg/dL)'] < 200]
+
+    # Define custom color palettes
+    # colors = sns.color_palette("husl")
+    custom_palette = {"M": "red", "F": "orange"}
+    
+
+    # Column 1 for respondents with high cholesterol
+    col1, col2 = st.columns(2)
+    with col1:
+        st.write('High Cholesterol')
+        plt.figure(figsize=(10, 6))
+        sns.lineplot(data=high_cholesterol_df, x="Usia", y="Trigliserida (mg/dL)", hue="Jenis Kelamin", palette=custom_palette)
+        plt.xlabel("Age")
+        plt.ylabel("Trigliserida")
+        plt.legend(title="Gender")
+        st.pyplot()
+
+    # Column 2 for respondents with low cholesterol
+    with col2:
+        st.write('Normal Cholesterol')
+        plt.figure(figsize=(10, 6))
+        sns.lineplot(data=low_cholesterol_df, x="Usia", y="Trigliserida (mg/dL)", hue="Jenis Kelamin", palette=custom_palette)
+        plt.xlabel("Age")
+        plt.ylabel("Trigliserida")
+        plt.legend(title="Gender")
+        st.pyplot()
+
+
+    col1, col2 = st.columns(2)
+    with col1:
+        with st.expander("🔍 See explanation"):
+            st.write("""
+            ===== TO BE DETERMINED =====
+                """)
+    
+    with col2:
+        with st.expander("❓ Why do we use this?"):
+            st.write("""
+            ===== TO BE DETERMINED =====
+                """)
+    #################################
+
+
+    ##### MEAN COMPARISON VALUE #####
+
+    st.markdown(
+        "<br>"
+        "<h5>Mean Value Comparison</h5>",  
+        unsafe_allow_html=True
+    )
+
+    # Define the features for comparison
+    features = ['Tekanan darah  (D)', 'Tekanan darah  (S)', 'Glukosa Puasa (mg/dL)', 'IMT (kg/m2)', 
+                'Trigliserida (mg/dL)', 'Fat', 'Visceral Fat', 'Masa Kerja']
+
+    # Filter respondents based on 'Cholesterol Total (mg/dL)'
+    high_cholesterol_df = df[df['Cholesterol Total (mg/dL)'] >= 200]
+    low_cholesterol_df = df[df['Cholesterol Total (mg/dL)'] < 200]
+
+    # Calculate mean values for each feature
+    high_mean_values = high_cholesterol_df[features].mean()
+    low_mean_values = low_cholesterol_df[features].mean()
+
+    # Combine mean values into a DataFrame
+    mean_values_df = pd.DataFrame({'Feature': features,
+                                   'High Cholesterol': high_mean_values,
+                                   'Normal Cholesterol': low_mean_values})
+
+    # Melt the DataFrame to plot with Seaborn
+    mean_values_df_melted = mean_values_df.melt(id_vars='Feature', var_name='Cholesterol Level', value_name='Mean Value')
+
+    # Plotting
+    plt.figure(figsize=(12, 8))
+    sns.lineplot(data=mean_values_df_melted, x='Feature', y='Mean Value', hue='Cholesterol Level', marker='o')
+    plt.xticks(rotation=45)
+    plt.xlabel('Feature')
+    plt.ylabel('Mean Value')
+    plt.title('Mean Value Comparison between Normal and High Cholesterol')
+    plt.legend(title='Cholesterol Level')
+
+    # Add grid
+    plt.grid(True)
+
+    st.pyplot()
+
+    col1, col2 = st.columns(2)
+    with col1:
+        with st.expander("🔍 See explanation"):
+            st.write("""
+            ===== TO BE DETERMINED =====
+                """)
+    
+    with col2:
+        with st.expander("❓ Why do we use this?"):
+            st.write("""
+            ===== TO BE DETERMINED =====
+                """)
+
+    #####################################
 
 # AZHAR'S
 def hypothesis_testing():
