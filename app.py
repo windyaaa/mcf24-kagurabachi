@@ -88,7 +88,7 @@ def engineering(X, y, test_size=0.25, random_state=42):
     X_test_scaled = X_test.copy()
     X_train_scaled.iloc[:, 1:11] = pt.fit_transform(X_train.iloc[:, 1:11])
     X_test_scaled.iloc[:, 1:11] = pt.transform(X_test.iloc[:, 1:11])
-    
+    pt_fitted = pt
     # Resampling using SMOTEN
     oversampler = SMOTEN(random_state=random_state)
     X_train_resampled, y_train_resampled = oversampler.fit_resample(X_train_scaled, y_train)
@@ -99,7 +99,7 @@ def engineering(X, y, test_size=0.25, random_state=42):
     X_train_resampled['IMT_Category_Kegemukan'] = X_train_resampled['IMT_Category_Kegemukan'].astype('int')
     X_train_resampled['IMT_Category_Obesitas'] = X_train_resampled['IMT_Category_Obesitas'].astype('int')
     
-    return X_train_resampled, X_test_scaled, y_train_resampled, y_test
+    return X_train_resampled, X_test_scaled, y_train_resampled, y_test,pt_fitted
 
 def model_fit(X_train_resampled, y_train_resampled):
     param_dist = {
@@ -139,7 +139,7 @@ def modeling_page():
 
         df_encoded.drop(columns=['Cholesterol Total (mg/dL)', 'Usia'], axis=1, inplace=True)
 
-        X_train_resampled, X_test_scaled, y_train_resampled, y_test = engineering(df_encoded.drop(columns=['CT_Category']), df_encoded['CT_Category'])
+        X_train_resampled, X_test_scaled, y_train_resampled, y_test,pt_fitted = engineering(df_encoded.drop(columns=['CT_Category']), df_encoded['CT_Category'])
 
         model = model_fit(X_train_resampled, y_train_resampled)
 
@@ -235,12 +235,14 @@ def modeling_page():
         preprocessed_df_input.drop(columns=['Usia'], axis=1, inplace=True)
         # st.write(preprocessed_df_input)
 
-        y_pred_input = model_predict(model, preprocessed_df_input)
+        preprocessed_df_input_scaled = preprocessed_df_input.copy()
+        preprocessed_df_input_scaled.iloc[:, 1:11] = pt_fitted.transform(preprocessed_df_input.iloc[:, 1:11])
+
+        y_pred_input = model_predict(model, preprocessed_df_input_scaled)
 
         if st.button('Submit'):
             st.write('---')
             st.header('Prediction Result')
-
             prediction_label = 'Tinggi' if y_pred_input[0] == 1 else 'Normal'
 
             if prediction_label == 'Tinggi':
