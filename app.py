@@ -208,9 +208,9 @@ def modeling_page():
         
         trigliserida = st.number_input("Trigliserida (mg/dL):", min_value=0.0)
         
-        fat = st.number_input("Fat")
+        fat = st.number_input("Fat", min_value=0.0)
         
-        visceral_fat = st.number_input("Visceral Fat")
+        visceral_fat = st.number_input("Visceral Fat", min_value=0.0)
         
         masa_kerja = st.number_input("Masa Kerja:", min_value=0.0)
 
