@@ -147,7 +147,7 @@ def modeling_page():
 
         report_xgb_str = "XGBoost:\n" + classification_report(y_test, y_pred_test)
         
-        st.write('**Detailed information performace model with 25% test data**')
+        st.write('**Detailed information performace best model (XGBoost) with 25% test data**')
 
         st.header('Confusion Matrix Best Model')
         col3, col4,col5 = st.columns([0.2,0.6,0.2])
