@@ -1,12 +1,38 @@
 import streamlit as st
+import pandas as pd
 
+
+df = pd.read_csv("data.csv")
 
 
 def home():
-    st.write("IRIS KAGURABACHI")
+    # Vertically align the content
+    st.markdown(
+        "<div style='display: flex; align-items: center; justify-content: center; flex-direction: column;'>"
+        "<h1 style='text-align: center;'>⚜️ IRIS KAGURABACHI</h1>"
+        "</div>",
+        unsafe_allow_html=True
+    )
+
+    st.image('kagurabachi.jpg')
+    st.markdown('***')
+
+    st.markdown(
+        "<div style='display: flex; align-items: center; justify-content: center; flex-direction: column;'>"
+        "<h5>R. Firdaus Dharmawan Akbar</p>"
+        "<h5>Dhia Alif Tajriyaani Azhar</p>"
+        "<h5>Ridho Pandhu Afrianto</p>"
+        "</div>",
+        unsafe_allow_html=True
+    )
+
 
 def eda():
-    st.write("Welcome to the Exploratory Data Analysis page!")
+    st.title("📊 Exploratory Data Analysis")
+    st.markdown("***")
+
+    st.write('20 rows of the dataset')
+    st.write(df.head(20))
 
 # AZHAR'S
 def hypothesis_testing():
