@@ -122,137 +122,132 @@ def model_fit(X_train_resampled, y_train_resampled):
 def model_predict(model, X_test):
     y_pred = model.predict(X_test)
     return y_pred
+raw_data = pd.read_csv('data.csv').drop(columns=['Responden'],axis=True)
+
+df = raw_data.copy().drop(columns=['Tempat lahir'],axis=True)
+
+threshold = 200
+df['CT_Category'] = np.where(df['Cholesterol Total (mg/dL)'] < threshold, 0, 1)
+df['CT_Category'] = df['CT_Category'].astype(int)
+
+df_encoded = preprocess_dataframe(df)
+
+df_encoded.drop(columns=['Cholesterol Total (mg/dL)', 'Usia'], axis=1, inplace=True)
+
+X_train_resampled, X_test_scaled, y_train_resampled, y_test,pt_fitted = engineering(df_encoded.drop(columns=['CT_Category']), df_encoded['CT_Category'])
+
+model = model_fit(X_train_resampled, y_train_resampled)
 
 def modeling_page():
-    st.header("Welcome to the Modeling page!")
-    tab1, tab2 = st.tabs(["Information Best Model", "Input Predict"])
-    with tab1:
-        raw_data = pd.read_csv('data.csv').drop(columns=['Responden'],axis=True)
+    st.header('Input Predict **Best Model (XGBoost)**')
+    st.write('---')
+    # User Input for Prediction
+    jenis_kelamin = st.radio("Jenis Kelamin:", ('Perempuan', 'Laki-laki'))
 
-        df = raw_data.copy().drop(columns=['Tempat lahir'],axis=True)
-
-        threshold = 200
-        df['CT_Category'] = np.where(df['Cholesterol Total (mg/dL)'] < threshold, 0, 1)
-        df['CT_Category'] = df['CT_Category'].astype(int)
-
-        df_encoded = preprocess_dataframe(df)
-
-        df_encoded.drop(columns=['Cholesterol Total (mg/dL)', 'Usia'], axis=1, inplace=True)
-
-        X_train_resampled, X_test_scaled, y_train_resampled, y_test,pt_fitted = engineering(df_encoded.drop(columns=['CT_Category']), df_encoded['CT_Category'])
-
-        model = model_fit(X_train_resampled, y_train_resampled)
-
-        y_pred_test = model_predict(model, X_test_scaled)
-
-        report_xgb_str = "XGBoost:\n" + classification_report(y_test, y_pred_test)
-        
-        st.write('**Detailed information performace best model (XGBoost) with 25% test data**')
-
-        st.header('Confusion Matrix Best Model')
-        col3, col4,col5 = st.columns([0.2,0.6,0.2])
-        with col4:
-            cm = confusion_matrix(y_test, y_pred_test)
-
-            tick_labels = ['Normal', 'Tinggi']
-
-            plt.figure(figsize=(4, 3))
-            sns.heatmap(cm, annot=True, cmap='Blues', fmt='g', xticklabels=tick_labels, yticklabels=tick_labels)
-            plt.xlabel('Predicted')
-            plt.ylabel('True')
-            st.pyplot()
-
-        st.header('Metrics Evaluation Best Model')
-        st.code(f"{report_xgb_str}", language='python')
+    jenis_kelamin = 'F' if jenis_kelamin == 'Perempuan' else 'M'
 
 
-        st.header('Interpretation/Explainable Best Model With SHAP Values')
-        col1, col2 = st.columns([0.5,0.5])
-        with col1:
-            explainer = shap.TreeExplainer(model)
-            shap_values = explainer.shap_values(X_test_scaled)
-            shap.summary_plot(shap_values, X_test_scaled, feature_names=X_train_resampled.columns)
-            plt.title("Summary Plot")
-            st.pyplot()
+    usia = st.number_input("Usia:", min_value=0, step=1)
+    
+    tekanan_darah_s = st.number_input("Tekanan darah (S):", min_value=0.0)
+    
+    tekanan_darah_d = st.number_input("Tekanan darah (D):", min_value=0.0)
+    
+    tinggi_badan = st.number_input("Tinggi badan (cm):", min_value=0.0)
+    
+    berat_badan = st.number_input("Berat badan (kg):", min_value=0.0)
+    
+    imt = st.number_input("IMT (kg/m2):", min_value=0.0)
+    
+    lingkar_perut = st.number_input("Lingkar perut (cm):", min_value=0.0)
+    
+    glukosa_puasa = st.number_input("Glukosa Puasa (mg/dL):", min_value=0.0)
+    
+    trigliserida = st.number_input("Trigliserida (mg/dL):", min_value=0.0)
+    
+    fat = st.number_input("Fat", min_value=0.0)
+    
+    visceral_fat = st.number_input("Visceral Fat", min_value=0.0)
+    
+    masa_kerja = st.number_input("Masa Kerja:", min_value=0.0)
 
-        with col2:
-            shap.summary_plot(shap_values, X_test_scaled, feature_names=X_train_resampled.columns, plot_type='bar')
-            plt.title("Summary Plot (Bar)")
-            st.pyplot()
+    input_user = {
+            'Jenis Kelamin': [jenis_kelamin],
+            'Usia': [usia],
+            'Tekanan darah  (S)': [tekanan_darah_s],
+            'Tekanan darah  (D)': [tekanan_darah_d],
+            'Tinggi badan (cm)': [tinggi_badan],
+            'Berat badan (kg)': [berat_badan],
+            'IMT (kg/m2)': [imt],
+            'Lingkar perut (cm)': [lingkar_perut],
+            'Glukosa Puasa (mg/dL)': [glukosa_puasa],
+            'Trigliserida (mg/dL)': [trigliserida],
+            'Fat': [fat],
+            'Visceral Fat': [visceral_fat],
+            'Masa Kerja': [masa_kerja]
+        }
+    df_input = pd.DataFrame(input_user)
+
+    preprocessed_df_input = preprocess_dataframe(df_input)
+    preprocessed_df_input.drop(columns=['Usia'], axis=1, inplace=True)
+    # st.write(preprocessed_df_input)
+
+    preprocessed_df_input_scaled = preprocessed_df_input.copy()
+    preprocessed_df_input_scaled.iloc[:, 1:11] = pt_fitted.transform(preprocessed_df_input.iloc[:, 1:11])
+
+    y_pred_input = model_predict(model, preprocessed_df_input_scaled)
+
+    if st.button('Submit'):
+        st.write('---')
+        st.header('Prediction Result')
+        prediction_label = 'Tinggi' if y_pred_input[0] == 1 else 'Normal'
+
+        if prediction_label == 'Tinggi':
+            st.markdown(f'Cholesterol Total Category: ')
+            st.error(prediction_label)
+        else:
+            st.markdown(f'Cholesterol Total Category: ')
+            st.success(prediction_label)
+
+def best_model():
+    st.header('Information **Best Model (XGBoost)**')
+    st.write('---')
+    y_pred_test = model_predict(model, X_test_scaled)
+
+    report_xgb_str = "XGBoost:\n" + classification_report(y_test, y_pred_test)
+    
+    st.write('**Detailed information performace best model (XGBoost) with 25% test data**')
+
+    st.header('Confusion Matrix Best Model')
+    col3, col4,col5 = st.columns([0.2,0.6,0.2])
+    with col4:
+        cm = confusion_matrix(y_test, y_pred_test)
+
+        tick_labels = ['Normal', 'Tinggi']
+
+        plt.figure(figsize=(4, 3))
+        sns.heatmap(cm, annot=True, cmap='Blues', fmt='g', xticklabels=tick_labels, yticklabels=tick_labels)
+        plt.xlabel('Predicted')
+        plt.ylabel('True')
+        st.pyplot()
+
+    st.header('Metrics Evaluation Best Model')
+    st.code(f"{report_xgb_str}", language='python')
 
 
+    st.header('Interpretation/Explainable Best Model With SHAP Values')
+    col1, col2 = st.columns([0.5,0.5])
+    with col1:
+        explainer = shap.TreeExplainer(model)
+        shap_values = explainer.shap_values(X_test_scaled)
+        shap.summary_plot(shap_values, X_test_scaled, feature_names=X_train_resampled.columns)
+        plt.title("Summary Plot")
+        st.pyplot()
 
-    with tab2:
-        st.header('Input Predict')
-        # User Input for Prediction
-        jenis_kelamin = st.radio("Jenis Kelamin:", ('Perempuan', 'Laki-laki'))
-
-        jenis_kelamin = 'F' if jenis_kelamin == 'Perempuan' else 'M'
-
-
-        usia = st.number_input("Usia:", min_value=0, step=1)
-        
-        tekanan_darah_s = st.number_input("Tekanan darah (S):", min_value=0.0)
-        
-        tekanan_darah_d = st.number_input("Tekanan darah (D):", min_value=0.0)
-        
-        tinggi_badan = st.number_input("Tinggi badan (cm):", min_value=0.0)
-        
-        berat_badan = st.number_input("Berat badan (kg):", min_value=0.0)
-        
-        imt = st.number_input("IMT (kg/m2):", min_value=0.0)
-        
-        lingkar_perut = st.number_input("Lingkar perut (cm):", min_value=0.0)
-        
-        glukosa_puasa = st.number_input("Glukosa Puasa (mg/dL):", min_value=0.0)
-        
-        trigliserida = st.number_input("Trigliserida (mg/dL):", min_value=0.0)
-        
-        fat = st.number_input("Fat", min_value=0.0)
-        
-        visceral_fat = st.number_input("Visceral Fat", min_value=0.0)
-        
-        masa_kerja = st.number_input("Masa Kerja:", min_value=0.0)
-
-        input_user = {
-                'Jenis Kelamin': [jenis_kelamin],
-                'Usia': [usia],
-                'Tekanan darah  (S)': [tekanan_darah_s],
-                'Tekanan darah  (D)': [tekanan_darah_d],
-                'Tinggi badan (cm)': [tinggi_badan],
-                'Berat badan (kg)': [berat_badan],
-                'IMT (kg/m2)': [imt],
-                'Lingkar perut (cm)': [lingkar_perut],
-                'Glukosa Puasa (mg/dL)': [glukosa_puasa],
-                'Trigliserida (mg/dL)': [trigliserida],
-                'Fat': [fat],
-                'Visceral Fat': [visceral_fat],
-                'Masa Kerja': [masa_kerja]
-            }
-        df_input = pd.DataFrame(input_user)
-
-        preprocessed_df_input = preprocess_dataframe(df_input)
-        preprocessed_df_input.drop(columns=['Usia'], axis=1, inplace=True)
-        # st.write(preprocessed_df_input)
-
-        preprocessed_df_input_scaled = preprocessed_df_input.copy()
-        preprocessed_df_input_scaled.iloc[:, 1:11] = pt_fitted.transform(preprocessed_df_input.iloc[:, 1:11])
-
-        y_pred_input = model_predict(model, preprocessed_df_input_scaled)
-
-        if st.button('Submit'):
-            st.write('---')
-            st.header('Prediction Result')
-            prediction_label = 'Tinggi' if y_pred_input[0] == 1 else 'Normal'
-
-            if prediction_label == 'Tinggi':
-                st.markdown(f'Cholesterol Total Category: ')
-                st.error(prediction_label)
-            else:
-                st.markdown(f'Cholesterol Total Category: ')
-                st.success(prediction_label)
-
-
+    with col2:
+        shap.summary_plot(shap_values, X_test_scaled, feature_names=X_train_resampled.columns, plot_type='bar')
+        plt.title("Summary Plot (Bar)")
+        st.pyplot()
 
 
 
@@ -260,7 +255,7 @@ def modeling_page():
 st.sidebar.title("Navigation")
 selected_page = st.sidebar.radio(
     "Go to",
-    ("Home", "Visual Analysis", "Hypothesis Testing", "Modeling")
+    ("Home", "Visual Analysis", "Hypothesis Testing", "Input Predict","Information Best Model")
 )
 
 
@@ -273,5 +268,7 @@ elif selected_page == "Visual Analysis":
     eda()
 elif selected_page == "Hypothesis Testing":
     hypothesis_testing()
-elif selected_page == "Modeling":
+elif selected_page == "Input Predict":
     modeling_page()
+elif selected_page == "Information Best Model":
+    best_model()
