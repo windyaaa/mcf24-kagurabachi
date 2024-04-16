@@ -18,6 +18,7 @@ from sklearn.preprocessing import LabelEncoder
 
 st.set_option('deprecation.showPyplotGlobalUse', False)
 df = pd.read_csv("data.csv")
+edadf= pd.read_csv("data.csv")
 
 
 
@@ -250,11 +251,12 @@ def eda():
     label_encoder = LabelEncoder()
 
     # Encode the 'Jenis Kelamin' column
-    df['Jenis Kelamin Encoded'] = label_encoder.fit_transform(df['Jenis Kelamin'])
-    df_encode = df.drop(columns=['Responden','Jenis Kelamin','Tempat lahir'])
+    edadf['Jenis Kelamin Encoded'] = label_encoder.fit_transform(edadf['Jenis Kelamin'])
+    df_encodecor = edadf.drop(columns=['Responden','Jenis Kelamin','Tempat lahir'])
+
 
     # Generate Spearman correlation matrix
-    correlation_matrix_spearman = df_encode.corr(method='spearman')
+    correlation_matrix_spearman = df_encodecor.corr(method='spearman')
 
     # Generate heatmap
     plt.figure(figsize=(10, 8))
@@ -291,11 +293,11 @@ def eda():
     )
 
     # Calculate Mean Arterial Pressure (MAP)
-    df['Mean Arterial Pressure'] = (2 * df['Tekanan darah  (D)'] + df['Tekanan darah  (S)']) / 3
+    edadf['Mean Arterial Pressure'] = (2 * edadf['Tekanan darah  (D)'] + edadf['Tekanan darah  (S)']) / 3
 
     # Filter respondents based on 'Cholesterol Total (mg/dL)'
-    high_cholesterol_df = df[df['Cholesterol Total (mg/dL)'] >= 200]
-    low_cholesterol_df = df[df['Cholesterol Total (mg/dL)'] < 200]
+    high_cholesterol_df = edadf[edadf['Cholesterol Total (mg/dL)'] >= 200]
+    low_cholesterol_df = edadf[edadf['Cholesterol Total (mg/dL)'] < 200]
 
     custom_palette = {"M": "blue", "F": "red"}
 
@@ -351,10 +353,6 @@ def eda():
     )
 
 
-    # Filter respondents based on 'Cholesterol Total (mg/dL)'
-    high_cholesterol_df = df[df['Cholesterol Total (mg/dL)'] >= 200]
-    low_cholesterol_df = df[df['Cholesterol Total (mg/dL)'] < 200]
-
     # Define custom color palettes
     # colors = sns.color_palette("Set2")
     custom_palette = {"M": "orange", "F": "green"}
@@ -408,9 +406,9 @@ def eda():
     )
 
 
-    # Filter respondents based on 'Cholesterol Total (mg/dL)'
-    high_cholesterol_df = df[df['Cholesterol Total (mg/dL)'] >= 200]
-    low_cholesterol_df = df[df['Cholesterol Total (mg/dL)'] < 200]
+    # # Filter respondents based on 'Cholesterol Total (mg/dL)'
+    # high_cholesterol_df = df[df['Cholesterol Total (mg/dL)'] >= 200]
+    # low_cholesterol_df = df[df['Cholesterol Total (mg/dL)'] < 200]
 
     # Define custom color palettes
     # colors = sns.color_palette("Set1")
@@ -464,9 +462,9 @@ Plot tersebut  menunjukkan bahwa nilai BMI untuk tingkat kolesterol tinggi cende
     )
 
 
-    # Filter respondents based on 'Cholesterol Total (mg/dL)'
-    high_cholesterol_df = df[df['Cholesterol Total (mg/dL)'] >= 200]
-    low_cholesterol_df = df[df['Cholesterol Total (mg/dL)'] < 200]
+    # # Filter respondents based on 'Cholesterol Total (mg/dL)'
+    # high_cholesterol_df = df[df['Cholesterol Total (mg/dL)'] >= 200]
+    # low_cholesterol_df = df[df['Cholesterol Total (mg/dL)'] < 200]
 
     # Define custom color palettes
     # colors = sns.color_palette("husl")
@@ -522,9 +520,9 @@ Plot ini menunjukkan bahwa high cholesterol memiliki nilai triglyceride yang ber
     features = ['Tekanan darah  (D)', 'Tekanan darah  (S)', 'Glukosa Puasa (mg/dL)', 'IMT (kg/m2)', 
                 'Trigliserida (mg/dL)', 'Fat', 'Visceral Fat', 'Masa Kerja']
 
-    # Filter respondents based on 'Cholesterol Total (mg/dL)'
-    high_cholesterol_df = df[df['Cholesterol Total (mg/dL)'] >= 200]
-    low_cholesterol_df = df[df['Cholesterol Total (mg/dL)'] < 200]
+    # # Filter respondents based on 'Cholesterol Total (mg/dL)'
+    # high_cholesterol_df = df[df['Cholesterol Total (mg/dL)'] >= 200]
+    # low_cholesterol_df = df[df['Cholesterol Total (mg/dL)'] < 200]
 
     # Calculate mean values for each feature
     high_mean_values = high_cholesterol_df[features].mean()
