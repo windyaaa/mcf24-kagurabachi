@@ -736,6 +736,93 @@ selected_page = st.sidebar.radio(
     ("Home", "Visual Analysis", "Hypothesis Testing", "Input Predict","Information Best Model")
 )
 
+def preprocess_dataframe(df):
+    df['Jenis Kelamin'] = df['Jenis Kelamin'].replace({'F': 0, 'M': 1})
+    df['Jenis Kelamin'] = df['Jenis Kelamin'].astype(int)
+
+    bins = [0, 18.5, 25, 30, float('inf')]
+    labels = ['Kurus', 'Normal', 'Kegemukan', 'Obesitas']
+    df['IMT_Category'] = pd.cut(df['IMT (kg/m2)'], bins=bins, labels=labels, right=False)
+
+    usia_global_bins = [0, 13, 20, 40, 60, float('inf')]
+    usia_global_labels = [0, 1, 2, 3, 4]
+    df['Usia_Category'] = pd.cut(df['Usia'], bins=usia_global_bins, labels=usia_global_labels, right=False)
+    df['Usia_Category'] = df['Usia_Category'].astype(int)
+
+    columns_to_encode = ['IMT_Category']
+    df_encoded = pd.get_dummies(df, columns=columns_to_encode)
+
+    return df_encoded
+
+def engineering(X, y, test_size=0.25, random_state=42):
+    # Train-test split
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=random_state, stratify=y)
+    
+    # Handling outliers using LocalOutlierFactor
+    lof = LocalOutlierFactor(n_neighbors=20, contamination=0.1)
+    lof.fit(X_train.iloc[:, 1:11])
+    outlier_labels_train = lof.fit_predict(X_train.iloc[:, 1:11])
+    outliers_indices_train = np.where(outlier_labels_train == -1)[0]
+    for feature_index in range(X_train.iloc[:, 1:11].shape[1]):  
+        median_value = np.median(X_train.iloc[:, 1:11].iloc[:, feature_index])  
+        X_train.iloc[outliers_indices_train, 1:11].iloc[:, feature_index] = median_value 
+    
+    # Scaling features using PowerTransformer
+    pt = PowerTransformer(method='yeo-johnson')
+    X_train_scaled = X_train.copy()
+    X_test_scaled = X_test.copy()
+    X_train_scaled.iloc[:, 1:11] = pt.fit_transform(X_train.iloc[:, 1:11])
+    X_test_scaled.iloc[:, 1:11] = pt.transform(X_test.iloc[:, 1:11])
+    pt_fitted = pt
+    # Resampling using SMOTEN
+    oversampler = SMOTEN(random_state=random_state)
+    X_train_resampled, y_train_resampled = oversampler.fit_resample(X_train_scaled, y_train)
+    
+    # Convert IMT_Category columns to int
+    X_train_resampled['IMT_Category_Kurus'] = X_train_resampled['IMT_Category_Kurus'].astype('int')
+    X_train_resampled['IMT_Category_Normal'] = X_train_resampled['IMT_Category_Normal'].astype('int')
+    X_train_resampled['IMT_Category_Kegemukan'] = X_train_resampled['IMT_Category_Kegemukan'].astype('int')
+    X_train_resampled['IMT_Category_Obesitas'] = X_train_resampled['IMT_Category_Obesitas'].astype('int')
+    
+    return X_train_resampled, X_test_scaled, y_train_resampled, y_test,pt_fitted
+
+def model_fit(X_train_resampled, y_train_resampled):
+    param_dist = {
+        'colsample_bytree': 0.5258177389372565,
+        'gamma': 0.18242481428361046,
+        'learning_rate': 0.21908843870992648,
+        'max_depth': 9,
+        'n_estimators': 105,
+        'reg_alpha': 0.39785559904574164,
+        'reg_lambda': 0.9694704332753689,
+        'subsample': 0.9327535629469901,
+        'random_state': 42
+    }
+
+    xgb_model = xgb.XGBClassifier(**param_dist)
+    xgb_model.fit(X_train_resampled, y_train_resampled)
+    
+    return xgb_model
+
+def model_predict(model, X_test):
+    y_pred = model.predict(X_test)
+    return y_pred
+raw_data = pd.read_csv('data.csv').drop(columns=['Responden'],axis=True)
+
+df = raw_data.copy().drop(columns=['Tempat lahir'],axis=True)
+
+threshold = 200
+df['CT_Category'] = np.where(df['Cholesterol Total (mg/dL)'] < threshold, 0, 1)
+df['CT_Category'] = df['CT_Category'].astype(int)
+
+df_encoded = preprocess_dataframe(df)
+
+df_encoded.drop(columns=['Cholesterol Total (mg/dL)', 'Usia'], axis=1, inplace=True)
+
+X_train_resampled, X_test_scaled, y_train_resampled, y_test,pt_fitted = engineering(df_encoded.drop(columns=['CT_Category']), df_encoded['CT_Category'])
+
+model = model_fit(X_train_resampled, y_train_resampled)
+
 def modeling_page():
     st.header('Input Predict **Best Model (XGBoost)**')
     st.write('---')
