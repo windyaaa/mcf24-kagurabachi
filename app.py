@@ -1,9 +1,17 @@
 import streamlit as st
 import pandas as pd
-import seaborn as sns
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import classification_report
+from imblearn.over_sampling import SMOTEN
+from sklearn.preprocessing import PowerTransformer
+from sklearn.neighbors import LocalOutlierFactor
+import numpy as np
+from sklearn.metrics import confusion_matrix
 import matplotlib.pyplot as plt
-import plotly.express as px
-
+import seaborn as sns
+import plotly.express as px  # Import Plotly Express
+from scipy.stats import chi2_contingency
+st.set_option('deprecation.showPyplotGlobalUse', False)
 
 st.set_option('deprecation.showPyplotGlobalUse', False)
 df = pd.read_csv("data.csv")
@@ -494,9 +502,164 @@ def eda():
 
 # AZHAR'S
 def hypothesis_testing():
-    st.write("Welcome to the Hypothesis Testing page!")
+    st.title("🔎 Hypothesis Testing")
+    st.markdown("***")
+
+    # st.text("")
+    st.markdown(
+        "<h5>The head of pre-processed data </h5>",  
+        unsafe_allow_html=True
+    )
+
+    #pre-pro zy
+    
+    # Define the threshold
+    threshold = 200
+
+    df2 = df
+    # Create 'CT_Category' based on the threshold
+    df2['CT_Category'] = np.where(df2['Cholesterol Total (mg/dL)'] < threshold, 'Low', 'High')
+
+    # Convert 'CT_Category' to categorical
+    df2['CT_Category'] = df2['CT_Category'].astype('category')
+    
+        # Define bins and labels for Age categories
+    age_bins = [0, 13, 20, 40, 60, float('inf')]
+    age_labels = ['Children', 'Teenagers', 'Young Adults', 'Adults', 'Elderly']
+
+    # Bin 'Age' column into categories
+    df2['Usia_Category'] = pd.cut(df2['Usia'], bins=age_bins, labels=age_labels, right=False)
+    
+        # Encode 'IMT (kg/m2)' column into categories
+    imt_bins = [0, 18.5, 25, 30, float('inf')]
+    imt_labels = ['Underweight', 'Normal Weight', 'Overweight', 'Obese']
+
+    # Create a new column with IMT categories
+    df2['IMT_Category'] = pd.cut(df2['IMT (kg/m2)'], bins=imt_bins, labels=imt_labels, right=False)
+    
+        # Define bins and labels for SBP and DBP categories
+    sbp_bins = [0, 120, 140, 160, float('inf')]
+    sbp_labels = ['Normal', 'Prehypertension', 'Stage 1 Hypertension', 'Stage 2 Hypertension']
+
+    dbp_bins = [0, 80, 90, 100, float('inf')]
+    dbp_labels = ['Normal', 'Prehypertension', 'Stage 1 Hypertension', 'Stage 2 Hypertension']
+
+    # Create new columns for binned categories
+    df2['SBP_Category'] = pd.cut(df2['Tekanan darah  (S)'], bins=sbp_bins, labels=sbp_labels, right=False)
+    df2['DBP_Category'] = pd.cut(df2['Tekanan darah  (D)'], bins=dbp_bins, labels=dbp_labels, right=False)
+    
+    
+    #show df
+    st.write(df2.head(20))
+    
+        # Define the mapping dictionary for blood pressure categories
+    bp_mapping = {'Normal': 0, 'Prehypertension': 1, 'Stage 1 Hypertension': 2, 'Stage 2 Hypertension': 3}
+    
+        # Create a new binary column
+    df2['Gender_Code'] = df2['Jenis Kelamin'].map({'M': 1, 'F': 0})
+    
+        # Encode categories into numerical labels
+    age_categories = {'Children': 0, 'Teenagers': 1, 'Young Adults': 2, 'Adults': 3, 'Elderly': 4}
+    df2['Usia_Category'] = df2['Usia_Category'].map(age_categories)
+
+    # Convert 'Jenis Kelamin' column to categorical
+    df2['Jenis Kelamin'] = df2['Jenis Kelamin'].astype('category')
+    
+        # Map categories to numerical labels for 'Tekanan darah (S)' and 'Tekanan darah (D)'
+    df2['SBP_Category'] = df2['SBP_Category'].map(bp_mapping)
+    df2['DBP_Category'] = df2['DBP_Category'].map(bp_mapping)
+    
+        # Encode 'Jenis Kelamin' column into binary (0 and 1)
+    df2['CT_Category'] = df2['CT_Category'].apply(lambda x: 1 if x == 'High' else 0)
+    
+    
+        # Define the bins and labels for IMT categories
+    imt_bins = [0, 18.5, 25, 30, float('inf')]
+    imt_labels = ['Underweight', 'Normal Weight', 'Overweight', 'Obese']
+
+    # Define the mapping dictionary
+    imt_mapping = {'Underweight': 0, 'Normal Weight': 1, 'Overweight': 2, 'Obese': 3}
+    
+    with st.expander("🗑️Binning References"):
+        st.write("""
+            * IMT: https://www.sehataqua.co.id/bmi-adalah/
+            * Usia: https://www.rspatriaikkt.co.id/klasifikasi-umur-menurut-who
+            * Tekanan darah (S & D): https://www.ncbi.nlm.nih.gov/books/NBK9633/
+                """)
+    
+    
+    st.markdown(
+        "<h5>Chi-square Test</h5>",  
+        unsafe_allow_html=True
+    )
+    
+    
+    
+    #chi-squared
+    
+        # Define the target variable and categorical predictors
+    target_variable = 'CT_Category'
+    categorical_predictors = [col for col in df2.columns if df2[col].dtype.name == 'category' and col != target_variable]
+
+    # Initialize a list to store correlation results
+    correlations = []
+
+    # Loop through each categorical predictor
+    for predictor in categorical_predictors:
+        # Create a contingency table between the predictor and target variable
+        contingency_table = pd.crosstab(df2[predictor], df2[target_variable])
+
+        # Perform chi-squared test
+        chi2_stat, p_val, dof, _ = chi2_contingency(contingency_table)
+
+        # Determine the significance of the predictor
+        significance = 'Significant' if p_val < 0.05 else 'Not Significant'
+
+        # Store the correlation results
+        correlation = {'Predictor': predictor, 'Chi-Square': chi2_stat, 'P-Value': p_val, 'Degrees of Freedom': dof, 'Significance': significance}
+        correlations.append(correlation)
+
+    # Create a DataFrame from the correlation results
+    correlations_df = pd.DataFrame(correlations)
+    
+    with st.expander("🔍 Hypothesis"):
+        st.write("""
+             * Hipotesis Nol (H0): Tidak ada hubungan signifikan antara variabel kategori (misalnya, jenis kelamin, kategori usia, kategori IMT, kategori tekanan darah) dengan tingkat kolesterol total.
+             * Hipotesis Alternatif (H1): Terdapat hubungan signifikan antara setidaknya satu variabel kategori (jenis kelamin, kategori usia, kategori IMT, kategori tekanan darah) dengan tingkat kolesterol total.
+                """)
+    with st.expander("🧮 How Chi-square test works?"):
+        
+        st.image('formula.jpg')
+        st.markdown('***')
+        st.write("""
+            * χ2 = Distribusi Chi-square
+            * Oi = Nilai observasi (pengamatan) ke-i
+            * Ei = Nilai ekspektasi ke-i
+                """)
+    
+    
+    #show df
+    st.write(correlations_df.head(20))
 
 
+    
+        
+        
+    col1, col2 = st.columns(2)
+    with col1:
+        with st.expander("✏️ See explanation"):
+            st.write("""
+            * Seperti terlihat dari p-value yang rendah, jenis kelamin memiliki pengaruh yang signifikan terhadap tingkat kolesterol total. Mungkin ada faktor-faktor biologis atau gaya hidup yang berbeda antara pria dan wanita yang memengaruhi kolesterol.
+            * Meskipun mungkin ada perbedaan dalam kolesterol di antara kelompok usia, namun tidak signifikan secara statistik. Usia mungkin bukan faktor utama yang memengaruhi kolesterol dalam dataset ini.
+            * Dengan p-value yang rendah, kategori IMT (indeks massa tubuh) memainkan peran penting dalam tingkat kolesterol. Hal ini menunjukkan bahwa kelebihan berat badan atau obesitas dapat berkontribusi signifikan terhadap tingkat kolesterol.
+            * Meskipun tekanan darah (sistolik dan diastolik) penting untuk kesehatan jantung, dalam konteks dataset ini, tidak ada bukti statistik yang menunjukkan hubungan yang signifikan dengan tingkat kolesterol.
+                """)
+    
+    with col2:
+        with st.expander("❓ Why do we use this?"):
+            st.write("""
+            Uji chi-square adalah metode statistik yang digunakan untuk menentukan apakah ada hubungan antara dua variabel kategori. Dalam kasus ini, uji chi-square membantu kita melihat apakah ada hubungan yang signifikan antara jenis kelamin, kategori usia, kategori IMT (indeks massa tubuh), kategori tekanan darah, dan kode kategori IMT dengan tingkat kolesterol total.
+                """)
 
 # Sidebar 
 st.sidebar.title("Navigation")
