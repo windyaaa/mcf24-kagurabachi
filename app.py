@@ -7,17 +7,12 @@ from imblearn.over_sampling import SMOTEN
 from sklearn.preprocessing import PowerTransformer
 from sklearn.neighbors import LocalOutlierFactor
 import numpy as np
-import xgboost as xgb
 from sklearn.metrics import confusion_matrix
+import matplotlib.pyplot as plt
+import seaborn as sns
 import shap
-import matplotlib.pyplot as plt
-import seaborn as sns
-st.set_option('deprecation.showPyplotGlobalUse', False)
-import seaborn as sns
-# import matplotlib
-# matplotlib.use('agg')
-import matplotlib.pyplot as plt
-import plotly.express as px
+import plotly.express as px  # Import Plotly Express
+from scipy.stats import chi2_contingency
 from sklearn.preprocessing import LabelEncoder
 
 
@@ -575,95 +570,171 @@ Plot ini menunjukkan bahwa high cholesterol memiliki nilai triglyceride yang ber
 
 # AZHAR'S
 def hypothesis_testing():
-    st.write("Welcome to the Hypothesis Testing page!")
+    st.title("🔎 Hypothesis Testing")
+    st.markdown("***")
 
-# DHARMA'S
-def preprocess_dataframe(df):
-    df['Jenis Kelamin'] = df['Jenis Kelamin'].replace({'F': 0, 'M': 1})
-    df['Jenis Kelamin'] = df['Jenis Kelamin'].astype(int)
+    # st.text("")
+    st.markdown(
+        "<h5>The head of pre-processed data </h5>",  
+        unsafe_allow_html=True
+    )
 
-    bins = [0, 18.5, 25, 30, float('inf')]
-    labels = ['Kurus', 'Normal', 'Kegemukan', 'Obesitas']
-    df['IMT_Category'] = pd.cut(df['IMT (kg/m2)'], bins=bins, labels=labels, right=False)
-
-    usia_global_bins = [0, 13, 20, 40, 60, float('inf')]
-    usia_global_labels = [0, 1, 2, 3, 4]
-    df['Usia_Category'] = pd.cut(df['Usia'], bins=usia_global_bins, labels=usia_global_labels, right=False)
-    df['Usia_Category'] = df['Usia_Category'].astype(int)
-
-    columns_to_encode = ['IMT_Category']
-    df_encoded = pd.get_dummies(df, columns=columns_to_encode)
-
-    return df_encoded
-
-def engineering(X, y, test_size=0.25, random_state=42):
-    # Train-test split
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=random_state, stratify=y)
+    #pre-pro zy
     
-    # Handling outliers using LocalOutlierFactor
-    lof = LocalOutlierFactor(n_neighbors=20, contamination=0.1)
-    lof.fit(X_train.iloc[:, 1:11])
-    outlier_labels_train = lof.fit_predict(X_train.iloc[:, 1:11])
-    outliers_indices_train = np.where(outlier_labels_train == -1)[0]
-    for feature_index in range(X_train.iloc[:, 1:11].shape[1]):  
-        median_value = np.median(X_train.iloc[:, 1:11].iloc[:, feature_index])  
-        X_train.iloc[outliers_indices_train, 1:11].iloc[:, feature_index] = median_value 
+    # Define the threshold
+    threshold = 200
+
+    df2 = df
+    # Create 'CT_Category' based on the threshold
+    df2['CT_Category'] = np.where(df2['Cholesterol Total (mg/dL)'] < threshold, 'Low', 'High')
+
+    # Convert 'CT_Category' to categorical
+    df2['CT_Category'] = df2['CT_Category'].astype('category')
     
-    # Scaling features using PowerTransformer
-    pt = PowerTransformer(method='yeo-johnson')
-    X_train_scaled = X_train.copy()
-    X_test_scaled = X_test.copy()
-    X_train_scaled.iloc[:, 1:11] = pt.fit_transform(X_train.iloc[:, 1:11])
-    X_test_scaled.iloc[:, 1:11] = pt.transform(X_test.iloc[:, 1:11])
-    pt_fitted = pt
-    # Resampling using SMOTEN
-    oversampler = SMOTEN(random_state=random_state)
-    X_train_resampled, y_train_resampled = oversampler.fit_resample(X_train_scaled, y_train)
+        # Define bins and labels for Age categories
+    age_bins = [0, 13, 20, 40, 60, float('inf')]
+    age_labels = ['Children', 'Teenagers', 'Young Adults', 'Adults', 'Elderly']
+
+    # Bin 'Age' column into categories
+    df2['Usia_Category'] = pd.cut(df2['Usia'], bins=age_bins, labels=age_labels, right=False)
     
-    # Convert IMT_Category columns to int
-    X_train_resampled['IMT_Category_Kurus'] = X_train_resampled['IMT_Category_Kurus'].astype('int')
-    X_train_resampled['IMT_Category_Normal'] = X_train_resampled['IMT_Category_Normal'].astype('int')
-    X_train_resampled['IMT_Category_Kegemukan'] = X_train_resampled['IMT_Category_Kegemukan'].astype('int')
-    X_train_resampled['IMT_Category_Obesitas'] = X_train_resampled['IMT_Category_Obesitas'].astype('int')
+        # Encode 'IMT (kg/m2)' column into categories
+    imt_bins = [0, 18.5, 25, 30, float('inf')]
+    imt_labels = ['Underweight', 'Normal Weight', 'Overweight', 'Obese']
+
+    # Create a new column with IMT categories
+    df2['IMT_Category'] = pd.cut(df2['IMT (kg/m2)'], bins=imt_bins, labels=imt_labels, right=False)
     
-    return X_train_resampled, X_test_scaled, y_train_resampled, y_test,pt_fitted
+        # Define bins and labels for SBP and DBP categories
+    sbp_bins = [0, 120, 140, 160, float('inf')]
+    sbp_labels = ['Normal', 'Prehypertension', 'Stage 1 Hypertension', 'Stage 2 Hypertension']
 
-def model_fit(X_train_resampled, y_train_resampled):
-    param_dist = {
-        'colsample_bytree': 0.5258177389372565,
-        'gamma': 0.18242481428361046,
-        'learning_rate': 0.21908843870992648,
-        'max_depth': 9,
-        'n_estimators': 105,
-        'reg_alpha': 0.39785559904574164,
-        'reg_lambda': 0.9694704332753689,
-        'subsample': 0.9327535629469901,
-        'random_state': 42
-    }
+    dbp_bins = [0, 80, 90, 100, float('inf')]
+    dbp_labels = ['Normal', 'Prehypertension', 'Stage 1 Hypertension', 'Stage 2 Hypertension']
 
-    xgb_model = xgb.XGBClassifier(**param_dist)
-    xgb_model.fit(X_train_resampled, y_train_resampled)
+    # Create new columns for binned categories
+    df2['SBP_Category'] = pd.cut(df2['Tekanan darah  (S)'], bins=sbp_bins, labels=sbp_labels, right=False)
+    df2['DBP_Category'] = pd.cut(df2['Tekanan darah  (D)'], bins=dbp_bins, labels=dbp_labels, right=False)
     
-    return xgb_model
+    
+    #show df
+    st.write(df2.head(20))
+    
+        # Define the mapping dictionary for blood pressure categories
+    bp_mapping = {'Normal': 0, 'Prehypertension': 1, 'Stage 1 Hypertension': 2, 'Stage 2 Hypertension': 3}
+    
+        # Create a new binary column
+    df2['Gender_Code'] = df2['Jenis Kelamin'].map({'M': 1, 'F': 0})
+    
+        # Encode categories into numerical labels
+    age_categories = {'Children': 0, 'Teenagers': 1, 'Young Adults': 2, 'Adults': 3, 'Elderly': 4}
+    df2['Usia_Category'] = df2['Usia_Category'].map(age_categories)
 
-def model_predict(model, X_test):
-    y_pred = model.predict(X_test)
-    return y_pred
-raw_data = pd.read_csv('data.csv').drop(columns=['Responden'],axis=True)
+    # Convert 'Jenis Kelamin' column to categorical
+    df2['Jenis Kelamin'] = df2['Jenis Kelamin'].astype('category')
+    
+        # Map categories to numerical labels for 'Tekanan darah (S)' and 'Tekanan darah (D)'
+    df2['SBP_Category'] = df2['SBP_Category'].map(bp_mapping)
+    df2['DBP_Category'] = df2['DBP_Category'].map(bp_mapping)
+    
+        # Encode 'Jenis Kelamin' column into binary (0 and 1)
+    df2['CT_Category'] = df2['CT_Category'].apply(lambda x: 1 if x == 'High' else 0)
+    
+    
+        # Define the bins and labels for IMT categories
+    imt_bins = [0, 18.5, 25, 30, float('inf')]
+    imt_labels = ['Underweight', 'Normal Weight', 'Overweight', 'Obese']
 
-df = raw_data.copy().drop(columns=['Tempat lahir'],axis=True)
+    # Define the mapping dictionary
+    imt_mapping = {'Underweight': 0, 'Normal Weight': 1, 'Overweight': 2, 'Obese': 3}
+    
+    with st.expander("🗑️Binning References"):
+        st.write("""
+            * IMT: https://www.sehataqua.co.id/bmi-adalah/
+            * Usia: https://www.rspatriaikkt.co.id/klasifikasi-umur-menurut-who
+            * Tekanan darah (S & D): https://www.ncbi.nlm.nih.gov/books/NBK9633/
+                """)
+    
+    
+    st.markdown(
+        "<h5>Chi-square Test</h5>",  
+        unsafe_allow_html=True
+    )
+    
+    
+    
+    #chi-squared
+    
+        # Define the target variable and categorical predictors
+    target_variable = 'CT_Category'
+    categorical_predictors = [col for col in df2.columns if df2[col].dtype.name == 'category' and col != target_variable]
 
-threshold = 200
-df['CT_Category'] = np.where(df['Cholesterol Total (mg/dL)'] < threshold, 0, 1)
-df['CT_Category'] = df['CT_Category'].astype(int)
+    # Initialize a list to store correlation results
+    correlations = []
 
-df_encoded = preprocess_dataframe(df)
+    # Loop through each categorical predictor
+    for predictor in categorical_predictors:
+        # Create a contingency table between the predictor and target variable
+        contingency_table = pd.crosstab(df2[predictor], df2[target_variable])
 
-df_encoded.drop(columns=['Cholesterol Total (mg/dL)', 'Usia'], axis=1, inplace=True)
+        # Perform chi-squared test
+        chi2_stat, p_val, dof, _ = chi2_contingency(contingency_table)
 
-X_train_resampled, X_test_scaled, y_train_resampled, y_test,pt_fitted = engineering(df_encoded.drop(columns=['CT_Category']), df_encoded['CT_Category'])
+        # Determine the significance of the predictor
+        significance = 'Significant' if p_val < 0.05 else 'Not Significant'
 
-model = model_fit(X_train_resampled, y_train_resampled)
+        # Store the correlation results
+        correlation = {'Predictor': predictor, 'Chi-Square': chi2_stat, 'P-Value': p_val, 'Degrees of Freedom': dof, 'Significance': significance}
+        correlations.append(correlation)
+
+    # Create a DataFrame from the correlation results
+    correlations_df = pd.DataFrame(correlations)
+    
+    with st.expander("🔍 Hypothesis"):
+        st.write("""
+             * Hipotesis Nol (H0): Tidak ada hubungan signifikan antara variabel kategori (misalnya, jenis kelamin, kategori usia, kategori IMT, kategori tekanan darah) dengan tingkat kolesterol total.
+             * Hipotesis Alternatif (H1): Terdapat hubungan signifikan antara setidaknya satu variabel kategori (jenis kelamin, kategori usia, kategori IMT, kategori tekanan darah) dengan tingkat kolesterol total.
+                """)
+    with st.expander("🧮 How Chi-square test works?"):
+        
+        st.image('formula.jpg')
+        st.markdown('***')
+        st.write("""
+            * χ2 = Distribusi Chi-square
+            * Oi = Nilai observasi (pengamatan) ke-i
+            * Ei = Nilai ekspektasi ke-i
+                """)
+    
+    
+    #show df
+    st.write(correlations_df.head(20))
+
+
+    
+        
+        
+    col1, col2 = st.columns(2)
+    with col1:
+        with st.expander("✏️ See explanation"):
+            st.write("""
+            * Seperti terlihat dari p-value yang rendah, jenis kelamin memiliki pengaruh yang signifikan terhadap tingkat kolesterol total. Mungkin ada faktor-faktor biologis atau gaya hidup yang berbeda antara pria dan wanita yang memengaruhi kolesterol.
+            * Meskipun mungkin ada perbedaan dalam kolesterol di antara kelompok usia, namun tidak signifikan secara statistik. Usia mungkin bukan faktor utama yang memengaruhi kolesterol dalam dataset ini.
+            * Dengan p-value yang rendah, kategori IMT (indeks massa tubuh) memainkan peran penting dalam tingkat kolesterol. Hal ini menunjukkan bahwa kelebihan berat badan atau obesitas dapat berkontribusi signifikan terhadap tingkat kolesterol.
+            * Meskipun tekanan darah (sistolik dan diastolik) penting untuk kesehatan jantung, dalam konteks dataset ini, tidak ada bukti statistik yang menunjukkan hubungan yang signifikan dengan tingkat kolesterol.
+                """)
+    
+    with col2:
+        with st.expander("❓ Why do we use this?"):
+            st.write("""
+            Uji chi-square adalah metode statistik yang digunakan untuk menentukan apakah ada hubungan antara dua variabel kategori. Dalam kasus ini, uji chi-square membantu kita melihat apakah ada hubungan yang signifikan antara jenis kelamin, kategori usia, kategori IMT (indeks massa tubuh), kategori tekanan darah, dan kode kategori IMT dengan tingkat kolesterol total.
+                """)
+
+# Sidebar 
+st.sidebar.title("Navigation")
+selected_page = st.sidebar.radio(
+    "Go to",
+    ("Home", "Visual Analysis", "Hypothesis Testing", "Input Predict","Information Best Model")
+)
 
 def modeling_page():
     st.header('Input Predict **Best Model (XGBoost)**')
@@ -775,18 +846,6 @@ def best_model():
         shap.summary_plot(shap_values, X_test_scaled, feature_names=X_train_resampled.columns, plot_type='bar')
         plt.title("Summary Plot (Bar)")
         st.pyplot()
-
-
-
-# Sidebar 
-st.sidebar.title("Navigation")
-selected_page = st.sidebar.radio(
-    "Go to",
-    ("Home", "Visual Analysis", "Hypothesis Testing", "Input Predict","Information Best Model")
-)
-
-
-
 
 
 if selected_page == "Home":
