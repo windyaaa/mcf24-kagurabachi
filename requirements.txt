@@ -3,5 +3,7 @@ pandas
 shap
 xgboost
 imblearn
-matplotlib
 seaborn
+matplotlib
+plotly
+scikit-learn
