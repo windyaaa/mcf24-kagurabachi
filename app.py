@@ -1,8 +1,11 @@
 import streamlit as st
 import pandas as pd
 import seaborn as sns
+# import matplotlib
+# matplotlib.use('agg')
 import matplotlib.pyplot as plt
 import plotly.express as px
+from sklearn.preprocessing import LabelEncoder
 
 
 st.set_option('deprecation.showPyplotGlobalUse', False)
@@ -59,7 +62,7 @@ def eda():
                     labels={'label': 'Cholesterol Level', 'value': 'Count'})
 
         # Set width and height of the figure
-        fig.update_layout(width=800, height=800)
+        fig.update_layout(width=400, height=400)
 
         # Display the pie chart
         st.plotly_chart(fig)  
@@ -168,16 +171,65 @@ def eda():
     with col1:
         with st.expander("🔍 See explanation"):
             st.write("""
-            ===== TO BE DETERMINED =====
+            Distribusi data secara visual tidak ada yang normal, bahkan untuk variabel kolesterol total sekalipun.
                 """)
     
     with col2:
         with st.expander("❓ Why do we use this?"):
             st.write("""
-            ===== TO BE DETERMINED =====
+            * Distribusi data ini penting karena memberikan informasi tentang pola-pola umum, termasuk apakah data cenderung terkumpul di sekitar nilai-nilai tertentu atau apakah ada outlier yang signifikan. 
+            * Informasi ini membantu kita dalam mengidentifikasi tren, anomali, dan karakteristik khusus dari populasi yang disurvei. 
+            * Dengan pemahaman yang lebih baik tentang distribusi variabel, kita dapat membuat keputusan yang lebih tepat dan merancang strategi intervensi yang lebih efektif dalam konteks kesehatan pegawai.
                 """)
 
     #################################
+
+    ##### SCATTER PLOT - LINEARITY #####
+    st.markdown(
+        "<br>"
+        "<h5>Scatter Plot</h5>",  
+        unsafe_allow_html=True
+    )
+
+    # Select numerical columns (excluding 'Responden', 'Usia', 'Tempat Lahir', and 'Jenis Kelamin')
+    numerical_columns = [col for col in df.columns if df[col].dtype in ['int64', 'float64'] 
+                        and col not in ['Responden', 'Usia', 'Tempat Lahir', 'Jenis Kelamin']]
+
+    num_plots = len(numerical_columns)
+    num_cols = 3
+    num_rows = (num_plots + num_cols - 1) // num_cols
+
+    colors = sns.color_palette("husl", num_plots)
+
+    for i in range(num_rows):
+        cols = st.columns(num_cols)
+        for j in range(num_cols):
+            idx = i * num_cols + j
+            if idx < num_plots:
+                with cols[j]:
+                    col = numerical_columns[idx]
+                    st.write(f" {col} vs Cholesterol Total")
+                    sns.scatterplot(data=df, x=col, y='Cholesterol Total (mg/dL)', color=colors[idx])
+                    plt.xlabel(col)
+                    plt.ylabel('Cholesterol Total (mg/dL)')
+                    plt.grid(True)
+                    st.pyplot()
+
+    col1, col2 = st.columns(2)
+    with col1:
+        with st.expander("🔍 See explanation"):
+            st.write("""
+             Dapat dilihat bahwa variabel-variabel ini tidak bersifat linear, kecuali variabel y terhadap variabel itu sendiri, yaitu kolesterol total
+                """)
+    
+    with col2:
+        with st.expander("❓ Why do we use this?"):
+            st.write("""
+            * Scatter plot digunakan untuk secara jelas memberikan visualisasi yang langsung tentang hubungan antara dua variabel 
+                     dan memungkinkan untuk dengan cepat menentukan apakah hubungan tersebut cenderung linier atau tidak,
+                    serta mendeteksi adanya outlier yang dapat mempengaruhi kecenderungan linieritas antara kedua variabel tersebut.
+                """)
+    #####################################
 
     ##### CORR MATRIX #####
     st.markdown(
@@ -185,25 +237,38 @@ def eda():
         "<h5>Correlation Matrix</h5>",  
         unsafe_allow_html=True
     )
-    correlation_matrix = df[numerical_columns].corr()
+
+    # Create a label encoder object
+    label_encoder = LabelEncoder()
+
+    # Encode the 'Jenis Kelamin' column
+    df['Jenis Kelamin Encoded'] = label_encoder.fit_transform(df['Jenis Kelamin'])
+    df_encode = df.drop(columns=['Responden','Jenis Kelamin','Tempat lahir'])
+
+    # Generate Spearman correlation matrix
+    correlation_matrix_spearman = df_encode.corr(method='spearman')
 
     # Generate heatmap
     plt.figure(figsize=(10, 8))
-    sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', fmt=".2f")
+    sns.heatmap(correlation_matrix_spearman, annot=True, cmap='coolwarm', fmt=".2f")
+    plt.tight_layout()
     st.pyplot()
+
 
     col1, col2 = st.columns(2)
     with col1:
         with st.expander("🔍 See explanation"):
             st.write("""
-            ===== TO BE DETERMINED =====
+            Correlation matrix terbukti memiliki banyak pasangan variabel yang saling berhubungan positif. Pasangan variabel IMT dengan berat badan menunjukkan hubungan yang kuat dengan nilai 0.87. sedangkan pasangan variabel jenis kelamin encoded dengan variabel fat menunjukkan adanya hubungan negatif yang cukup kuat diantaranya, dengan nilai -0.30.
+
                 """)
     
     with col2:
         with st.expander("❓ Why do we use this?"):
             st.write("""
-            ===== TO BE DETERMINED =====
-                """)
+            * Matriks korelasi memberikan informasi tentang sejauh mana dua variabel bergerak bersama-sama, apakah hubungan antara mereka positif (seiring bertambahnya nilai satu variabel, nilai variabel lainnya juga meningkat), negatif (salah satu nilai meningkat, yang lainnya menurun), atau tidak berkorelasi sama sekali. 
+            * Spearman dipilih menjadi metode untuk kalkulasi korelasi dikarenakan tidak ada variabel yang linier (terbukti pada scatter plot).
+                         """)
     #################################
 
 
@@ -253,13 +318,14 @@ def eda():
     with col1:
         with st.expander("🔍 See explanation"):
             st.write("""
-            ===== TO BE DETERMINED =====
+            Plot ini membuktikan bahwa Perempuan cenderung memiliki rata-rata tekanan darah lebih rendah daripada laki-laki pada kedua tingkat kolesterol normal dan tinggi. tingkat tertinggi tekanan darah terdapat pada laki-laki di usia 25-27, sedangkan tingkat terendah pada kolesterol normal terdapat pada perempuan di usia 20-22.
+
                 """)
     
     with col2:
         with st.expander("❓ Why do we use this?"):
             st.write("""
-            ===== TO BE DETERMINED =====
+           Visualisasi ini dipilih karena sesuai penelitian Madsen et. al. (2017), faktor tekanan darah memiliki hubungan sebab akibat dengan kolesterol total. 
                 """)
 
     ###############################################
@@ -311,19 +377,19 @@ def eda():
     with col1:
         with st.expander("🔍 See explanation"):
             st.write("""
-            ===== TO BE DETERMINED =====
+            Terbukti bahwa pada kedua tingkat kolesterol, perempuan dan laki-laki memiliki nilai glukosa puasa yang relatif mirip. namun pada kolesterol tinggi, laki-laki pada usia 37 tahun memiliki nilai kolesterol yang paling tinggi. lain halnya dengan kolesterol normal, perempuan pada usia 32 tahun memiliki nilai kolesterol tertinggi.
                 """)
     
     with col2:
         with st.expander("❓ Why do we use this?"):
             st.write("""
-            ===== TO BE DETERMINED =====
+            Visualisasi ini dipilih karena sesuai penelitian Madsen et. al. (2017), faktor glukosa pada saat puasa memiliki hubungan dengan kolesterol total. 
                 """)
     #################################
 
 
 
-        ##### FASTING GLUCOSE #####
+        ##### BMI #####
 
     st.text("")
 
@@ -368,17 +434,18 @@ def eda():
     with col1:
         with st.expander("🔍 See explanation"):
             st.write("""
-            ===== TO BE DETERMINED =====
+Plot tersebut  menunjukkan bahwa nilai BMI untuk tingkat kolesterol tinggi cenderung meningkat seiring bertambahnya usia, terutama pada wanita. sedangkan pada tingkat kolesterol normal, nilai BMI pada laki-laki cenderung meningkat seiring bertambahnya usia.
+
                 """)
     
     with col2:
         with st.expander("❓ Why do we use this?"):
             st.write("""
-            ===== TO BE DETERMINED =====
+             Visualisasi ini dipilih karena sesuai penelitian Madsen et. al. (2017), faktor glukosa pada saat puasa memiliki hubungan dengan kolesterol total. 
                 """)
     #################################
 
-        ##### FASTING GLUCOSE #####
+        ##### TRIGLYCERIDE #####
 
     st.text("")
 
@@ -424,13 +491,13 @@ def eda():
     with col1:
         with st.expander("🔍 See explanation"):
             st.write("""
-            ===== TO BE DETERMINED =====
+Plot ini menunjukkan bahwa high cholesterol memiliki nilai triglyceride yang berbeda untuk kedua gender mengalami fluktuasi naik-turun yang signifikan. sedangkan pada normal cholesterol, untuk kedua gender memiliki tingkat triglyceride yang konstan dari usia 20-27 tahun, namun mulai mengalami perubahan pada usia 30 tahun, dengan tingkat triglyseride tertinggi oleh laki-laki dengan usia 37 tahun.
                 """)
     
     with col2:
         with st.expander("❓ Why do we use this?"):
             st.write("""
-            ===== TO BE DETERMINED =====
+            Visualisasi ini dipilih karena sesuai penelitian Madsen et. al. (2017), faktor glukosa pada saat puasa memiliki hubungan erat dengan kolesterol total. 
                 """)
     #################################
 
@@ -481,13 +548,14 @@ def eda():
     with col1:
         with st.expander("🔍 See explanation"):
             st.write("""
-            ===== TO BE DETERMINED =====
+            Dari plot ini, terdapat kesamaan nilai mean value pada variabel-variabel yang diuji kecuali pada variabel variabel trigliserida yang menunjukkan perbedaan nilai mean value yang paling besar, dengan tingkat kolesterol normal dengan nilai 100 dan tingkat kolesterol tinggi dengan nilai 140.
                 """)
     
     with col2:
         with st.expander("❓ Why do we use this?"):
             st.write("""
-            ===== TO BE DETERMINED =====
+            * Plot ini berguna sebagai acuan kita untuk mengetahui sebenarnya berapa nilai rata-rata dari setiap variabel penting pada orang dengan kolesterol normal.
+            * Dengan membandingkannya pada nilai-nilai variabel penderita kolesterol tinggi, kita dapat mengetahui seberapa jauh perbedaan tersebut.
                 """)
 
     #####################################
