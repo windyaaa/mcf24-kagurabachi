@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+import plotly.express as px
 
 
 st.set_option('deprecation.showPyplotGlobalUse', False)
@@ -46,14 +47,57 @@ def eda():
     normal_cholesterol_count = df[df['Cholesterol Total (mg/dL)'] < 200].shape[0]
 
     with st.expander("❗ Pre-indicator for imbalanced data"):
-        # st.markdown('**Pre-indicator for imbalanced data**')
-        st.write(f"Number of respondents with normal cholesterol (< 200 mg/dL): {normal_cholesterol_count}")
-        st.write(f"Number of respondents with high cholesterol (>= 200 mg/dL): {high_cholesterol_count}")
-        
+        # st.write(f"Number of respondents with normal cholesterol (< 200 mg/dL): {normal_cholesterol_count}")
+        # st.write(f"Number of respondents with high cholesterol (>= 200 mg/dL): {high_cholesterol_count}")
+
+        # Create data for pie chart
+        labels = ['Normal Cholesterol', 'High Cholesterol']
+        counts = [normal_cholesterol_count, high_cholesterol_count]
+
+        # Create a pie chart using Plotly with reduced size
+        fig = px.pie(values=counts, names=labels, title="Cholesterol Distribution", 
+                    labels={'label': 'Cholesterol Level', 'value': 'Count'})
+
+        # Set width and height of the figure
+        fig.update_layout(width=800, height=800)
+
+        # Display the pie chart
+        st.plotly_chart(fig)  
+
 
     with st.expander("💡 Variables explanation"):
         st.write("""
-        ===== TO BE DETERMINED =====
+        1. Responden: Merupakan identitas unik bagi setiap pegawai yang mengikuti survey.
+
+2. Jenis Kelamin: Kategorikal, menunjukkan jenis kelamin pegawai, bisa berupa "Laki-laki" atau "Perempuan".
+
+3. Usia: Numerik, menunjukkan usia pegawai dalam satuan tahun.
+
+4. Tekanan Darah (S): Numerik, menunjukkan nilai tekanan darah sistolik pegawai dalam satuan mmHg. Tekanan darah sistolik adalah tekanan darah saat jantung berkontraksi.
+
+5. Tekanan Darah (D): Numerik, menunjukkan nilai tekanan darah diastolik pegawai dalam satuan mmHg. Tekanan darah diastolik adalah tekanan darah saat jantung berelaksasi.
+
+6. Tinggi Badan (cm): Numerik, menunjukkan tinggi badan pegawai dalam satuan sentimeter.
+
+7. Berat Badan (kg): Numerik, menunjukkan berat badan pegawai dalam satuan kilogram.
+
+8. IMT (kg/m2): Numerik, menunjukkan Indeks Massa Tubuh (IMT) pegawai, dihitung dengan rumus: berat badan (kg) / [tinggi badan (m)]^2. IMT digunakan untuk mengklasifikasikan status berat badan (kurus, normal, overweight, obesitas).
+
+9. Lingkar Perut (cm): Numerik, menunjukkan lingkar perut pegawai dalam satuan sentimeter. Lingkar perut digunakan sebagai indikator risiko kesehatan metabolik.
+
+10. Glukosa Puasa (mg/dL): Numerik, menunjukkan kadar glukosa darah pegawai saat puasa (tidak makan minimal 8 jam) dalam satuan miligram per desiliter (mg/dL). Kadar glukosa darah yang tinggi dapat mengindikasikan diabetes.
+
+11. Kolesterol Total (mg/dL): Numerik, menunjukkan kadar kolesterol total dalam darah pegawai dalam satuan miligram per desiliter (mg/dL). Kolesterol total terdiri dari kolesterol LDL ("jahat") dan HDL ("baik").
+
+12. Trigliserida (mg/dL): Numerik, menunjukkan kadar trigliserida dalam darah pegawai dalam satuan miligram per desiliter (mg/dL). Trigliserida adalah jenis lemak yang disimpan dalam tubuh. Kadar trigliserida yang tinggi dapat meningkatkan risiko penyakit jantung.
+
+13. Fat: Numerik, menunjukkan persentase lemak tubuh pegawai.
+
+14. Visceral Fat: Numerik, menunjukkan persentase lemak visceral (lemak di sekitar organ perut) pegawai. 
+
+15. Masa Kerja: Numerik, menunjukkan lama waktu pegawai bekerja di perusahaan dalam satuan tahun.
+
+16. Tempat Lahir: Kategorikal, menunjukkan kota tempat lahir pegawai.
             """)
     ##############################
 
@@ -71,13 +115,16 @@ def eda():
     with col1:
         with st.expander("🔍 See explanation"):
             st.write("""
-            ===== TO BE DETERMINED =====
+            * Dari data tersebut, terlihat bahwa mayoritas responden berusia relatif muda, dengan beragam variabilitas dalam parameter kesehatan seperti tekanan darah, tinggi badan, berat badan, dan kadar gula darah. 
+            * Dapat terlihat ada variasi dalam kadar kolesterol dan trigliserida. 
+            * Meskipun demikian, untuk beberapa variabel seperti tinggi badan dan kadar glukosa puasa, terdapat konsistensi yang mencolok dalam nilai median.
                 """)
     
     with col2:
         with st.expander("❓ Why do we use this?"):
             st.write("""
-            ===== TO BE DETERMINED =====
+            * Statistika deskriptif diperlukan untuk dataset ini agar kita dapat memahami dan menggambarkan secara ringkas karakteristik-karakteristik utama dari data kesehatan pegawai yang disurvei. 
+            * Informasi ini berguna untuk memberikan pemahaman awal tentang profil kesehatan populasi pegawai tersebut, yang dapat menjadi dasar untuk analisis lebih lanjut,seperti pengambilan keputusan ataupun pemodelan.
                 """)
     ########################################
 
@@ -89,9 +136,11 @@ def eda():
         "<h5>Distributions</h5>",  
         unsafe_allow_html=True
     )
+
+
     numerical_columns = [col for col in df.columns if df[col].dtype in ['int64', 'float64'] 
-                            and col not in ['Responden', 'Tempat Lahir']]
-    
+                                and col not in ['Responden', 'Tempat Lahir']]
+
     num_plots = len(numerical_columns)
     num_cols = 3
     num_rows = (num_plots + num_cols - 1) // num_cols
@@ -107,7 +156,11 @@ def eda():
                 with cols[j]:
                     col = numerical_columns[idx]
                     st.write(col)
-                    sns.histplot(data=df, x=col, kde=True, color=colors[idx])
+                    # Adjust the plotting parameters
+                    if col == "Usia":  # Adjust parameters for 'Usia' plot
+                        sns.histplot(data=df, x=col, kde=True, color=colors[idx])
+                    else:  # For other plots
+                        sns.histplot(data=df, x=col, kde=True, color=colors[idx])
                     plt.xlabel('')
                     st.pyplot()
 
